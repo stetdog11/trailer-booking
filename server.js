@@ -3,6 +3,7 @@ const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 const cors = require("cors");
 const basicAuth = require("express-basic-auth");
+console.log("RUNNING SERVER.JS VERSION 1");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -127,6 +128,9 @@ app.post("/admin/cancel", (req, res) => {
       res.json({ success: true });
     },
   );
+});
+app.get("/admin", adminAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
 // ===== Static Files (LAST) =====
