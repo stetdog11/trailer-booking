@@ -4,7 +4,6 @@ const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 const cors = require("cors");
 const basicAuth = require("express-basic-auth");
-const fetch = require("node-fetch");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
