@@ -204,8 +204,6 @@
 
       // Build a simple calendar invite (local time, no timezone math)
       function buildICS(b) {
-        // b.date is YYYY-MM-DD
-        // Your slots are 9-12, 12-3, 3-6
         const slotMap = {
           "9:00 AM - 12:00 PM": { start: "090000", end: "120000" },
           "12:00 PM - 3:00 PM": { start: "120000", end: "150000" },
@@ -249,15 +247,39 @@
       // Clear last booking when they leave to book again
       bookAnother.addEventListener("click", () => {
         localStorage.removeItem("last_booking");
+        localStorage.removeItem("name");
+        localStorage.removeItem("booking");
       });
+
+      // Helper: safely parse JSON
+      function safeParse(str) {
+        try {
+          return JSON.parse(str);
+        } catch {
+          return null;
+        }
+      }
 
       if (!raw) {
         addRow("Status", "No booking details found.");
         addCalBtn.style.display = "none";
       } else {
-        try {
-          const b = JSON.parse(raw);
-          if (!b.name) b.name = localStorage.getItem("name") || "";
+        const b = safeParse(raw);
+
+        if (!b) {
+          addRow("Status", "Booking confirmed.");
+          addCalBtn.style.display = "none";
+        } else {
+          // ✅ Force name fallback(s) if last_booking is missing it
+          if (!b.name) {
+            const bookingObj = safeParse(localStorage.getItem("booking") || "");
+            b.name =
+              (localStorage.getItem("name") || "").trim() ||
+              (bookingObj && bookingObj.name
+                ? String(bookingObj.name).trim()
+                : "") ||
+              "";
+          }
 
           addRow("Date", b.date || "—");
           addRow("Time Slot", b.slotLabel || "—");
@@ -272,9 +294,6 @@
           const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
           const url = URL.createObjectURL(blob);
           addCalBtn.href = url;
-        } catch (e) {
-          addRow("Status", "Booking confirmed.");
-          addCalBtn.style.display = "none";
         }
       }
     </script>
