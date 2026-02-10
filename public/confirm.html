@@ -257,6 +257,7 @@
       } else {
         try {
           const b = JSON.parse(raw);
+          if (!b.name) b.name = localStorage.getItem("name") || "";
 
           addRow("Date", b.date || "—");
           addRow("Time Slot", b.slotLabel || "—");

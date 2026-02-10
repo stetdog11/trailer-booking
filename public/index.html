@@ -636,6 +636,7 @@
           address: address.value,
           notes: notes.value,
         };
+        localStorage.setItem("booking", JSON.stringify(body));
 
         const res = await fetch("/book", {
           method: "POST",
