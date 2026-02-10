@@ -630,7 +630,7 @@
         const body = {
           date: selectedDate,
           slot: selectedSlot,
-          name: name.value,
+          name: document.getElementById("name").value.trim(),
           phone: phone.value,
           email: email.value,
           address: address.value,
