@@ -45,17 +45,21 @@ const adminAuth = basicAuth({
   challenge: true,
 });
 
-// ===== ADMIN ROUTES (MUST COME BEFORE static) =====
+// ===== Debug ping (proves Render is running THIS file) =====
+app.get("/__ping", (req, res) => {
+  res.type("text").send("PING OK");
+});
+
+// ===== ADMIN ROUTES (MUST BE BEFORE static) =====
 app.get("/admin", adminAuth, (req, res) => {
   res.redirect("/admin.html");
 });
 
 app.get("/admin.html", adminAuth, (req, res) => {
+  // Force browser to treat as HTML
+  res.type("html");
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
-
-app.use("/admin/bookings", adminAuth);
-app.use("/admin/cancel", adminAuth);
 
 // ===== Availability =====
 app.get("/availability", (req, res) => {
@@ -96,8 +100,8 @@ app.post("/book", (req, res) => {
   );
 });
 
-// ===== Admin APIs =====
-app.get("/admin/bookings", (req, res) => {
+// ===== Admin APIs (PROTECTED ON THE ROUTE ITSELF) =====
+app.get("/admin/bookings", adminAuth, (req, res) => {
   const { date } = req.query;
 
   const sql = date
@@ -112,7 +116,7 @@ app.get("/admin/bookings", (req, res) => {
   });
 });
 
-app.post("/admin/cancel", (req, res) => {
+app.post("/admin/cancel", adminAuth, (req, res) => {
   const { id } = req.body;
 
   db.run(
@@ -123,9 +127,6 @@ app.post("/admin/cancel", (req, res) => {
       res.json({ success: true });
     },
   );
-});
-app.get("/admin", adminAuth, (req, res) => {
-  res.redirect("/admin.html");
 });
 
 // ===== Static Files (ABSOLUTELY LAST) =====
