@@ -47,7 +47,7 @@ const adminAuth = basicAuth({
 
 // ===== Debug ping (proves Render is running THIS file) =====
 app.get("/__ping", (req, res) => {
-  res.type("text").send("PING OK");
+  res.type("text").send("PING-123");
 });
 
 // ===== ADMIN ROUTES (MUST BE BEFORE static) =====
@@ -56,8 +56,6 @@ app.get("/admin", adminAuth, (req, res) => {
 });
 
 app.get("/admin.html", adminAuth, (req, res) => {
-  // Force browser to treat as HTML
-  res.type("html");
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
