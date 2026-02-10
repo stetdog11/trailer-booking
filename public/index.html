@@ -585,12 +585,12 @@
             : `<span class="pill bad">Booked</span>`;
 
           btn.innerHTML = `
-          <div>
-            <div style="font-weight:900;">${s.label}</div>
-            <div style="font-size:12px;color:#666;font-weight:800;">3 hours</div>
-          </div>
-          ${statusPill}
-        `;
+                      <div>
+                        <div style="font-weight:900;">${s.label}</div>
+                        <div style="font-size:12px;color:#666;font-weight:800;">3 hours</div>
+                      </div>
+                      ${statusPill}
+                    `;
 
           btn.onclick = () => {
             selectedSlot = s.slot;
@@ -644,23 +644,39 @@
         });
 
         if (res.ok) {
-          msg.textContent = `Booked! (${selectedLabel})`;
-          msg.className = "msg ok";
+          const data = await res.json();
 
-          const r2 = await fetch(`/availability?date=${selectedDate}`);
-          const updated = await r2.json();
-          renderSlots(updated);
+          localStorage.setItem(
+            "last_booking",
+            JSON.stringify({
+              id: data.id || "",
+              date: selectedDate,
+              slotLabel: selectedLabel,
+              name: body.name,
+              phone: body.phone,
+              email: body.email || "",
+              address: body.address || "",
+              notes: body.notes || "",
+            }),
+          );
 
-          const fullyBooked = updated.every((s) => !s.available);
-          monthStatusCache.set(selectedDate, { fullyBooked });
-
-          if (fullyBooked) renderCalendar();
-        } else {
-          msg.textContent = "That slot just got taken. Pick another one.";
-          msg.className = "msg err";
+          window.location.href = "/confirm.html";
+          return;
         }
 
+        // Booking failed (slot was taken)
+        msg.textContent = "That slot just got taken. Pick another one.";
+        msg.className = "msg err";
         bookBtn.disabled = false;
+
+        // Refresh slots + calendar dots
+        const r2 = await fetch(`/availability?date=${selectedDate}`);
+        const updated = await r2.json();
+        renderSlots(updated);
+
+        const fullyBooked = updated.every((s) => !s.available);
+        monthStatusCache.set(selectedDate, { fullyBooked });
+        if (fullyBooked) renderCalendar();
       });
 
       document.getElementById("prevBtn").onclick = () => {

@@ -38,8 +38,8 @@ const slots = {
   3: "3:00 PM - 6:00 PM",
 };
 // ===== Admin lock (Basic Auth) =====
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "change-me";
+const ADMIN_USER = process.env.ADMIN_USER || "allkeys";
+const ADMIN_PASS = process.env.ADMIN_PASS || "seadog";
 
 const adminAuth = basicAuth({
   users: { [ADMIN_USER]: ADMIN_PASS },

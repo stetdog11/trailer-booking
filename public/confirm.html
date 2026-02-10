@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Booking Confirmed — All Keys Trailer Repair</title>
+    <link rel="icon" href="/logo.png" />
+    <style>
+      :root {
+        --blue: #4aa3c7;
+        --text: #1e293b;
+        --muted: #64748b;
+        --btn: #111827;
+        --btnText: #fff;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        background: linear-gradient(180deg, var(--blue), #68b8d7);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 24px;
+      }
+      .wrap {
+        width: min(760px, 100%);
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 14px;
+        padding: 14px 16px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+        margin-bottom: 16px;
+      }
+      .header img {
+        width: 56px;
+        height: auto;
+        display: block;
+      }
+      .header .title {
+        font-weight: 800;
+        font-size: 18px;
+        line-height: 1.2;
+      }
+      .header .sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: #111827;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 22px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin: 14px 0 16px;
+      }
+      .row {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+      }
+      .label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .value {
+        font-weight: 800;
+        margin-top: 4px;
+        word-break: break-word;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .btn {
+        appearance: none;
+        border: 0;
+        background: var(--btn);
+        color: var(--btnText);
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn.secondary {
+        background: #e2e8f0;
+        color: #111827;
+      }
+      .note {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .foot {
+        text-align: center;
+        color: rgba(15, 23, 42, 0.55);
+        font-size: 12px;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="header">
+        <img src="/logo.png" alt="All Keys Trailer Repair" />
+        <div>
+          <div class="title">All Keys Trailer Repair</div>
+          <div class="sub">
+            Mobile Trailer Repair • 9:00am–6:00pm • 3-hour slots
+          </div>
+        </div>
+        <div style="margin-left: auto">
+          <a class="pill" href="tel:+13055708440">Call/Text (305) 570-8440</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h1>✅ Booking Confirmed</h1>
+
+        <div class="grid" id="details"></div>
+
+        <div class="actions">
+          <a class="btn" id="bookAnother" href="/">Book another time</a>
+          <a
+            class="btn secondary"
+            id="addCal"
+            href="#"
+            download="appointment.ics"
+            >Add to calendar</a
+          >
+        </div>
+
+        <div class="note">
+          Need to change your appointment? Please call/text us. Online bookings
+          can’t be edited after submission.
+        </div>
+
+        <div class="foot">© All Keys Trailer Repair</div>
+      </div>
+    </div>
+
+    <script>
+      const raw = localStorage.getItem("last_booking");
+      const detailsEl = document.getElementById("details");
+      const addCalBtn = document.getElementById("addCal");
+      const bookAnother = document.getElementById("bookAnother");
+
+      function addRow(label, value) {
+        const div = document.createElement("div");
+        div.className = "row";
+        div.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+        detailsEl.appendChild(div);
+      }
+
+      function escapeICS(s) {
+        return String(s || "")
+          .replace(/\\/g, "\\\\")
+          .replace(/\n/g, "\\n")
+          .replace(/,/g, "\\,")
+          .replace(/;/g, "\\;");
+      }
+
+      // Build a simple calendar invite (local time, no timezone math)
+      function buildICS(b) {
+        // b.date is YYYY-MM-DD
+        // Your slots are 9-12, 12-3, 3-6
+        const slotMap = {
+          "9:00 AM - 12:00 PM": { start: "090000", end: "120000" },
+          "12:00 PM - 3:00 PM": { start: "120000", end: "150000" },
+          "3:00 PM - 6:00 PM": { start: "150000", end: "180000" },
+        };
+
+        const slot = slotMap[b.slotLabel] || { start: "090000", end: "120000" };
+        const ymd = (b.date || "").replace(/-/g, "");
+        const dtStart = `${ymd}T${slot.start}`;
+        const dtEnd = `${ymd}T${slot.end}`;
+
+        const summary = "Trailer Repair Appointment";
+        const description =
+          `Name: ${b.name || ""}\\nPhone: ${b.phone || ""}\\n` +
+          (b.notes ? `Notes: ${b.notes}\\n` : "") +
+          (b.id ? `Confirmation: ${b.id}\\n` : "") +
+          "If you need to change this appointment, call/text.";
+
+        const location = b.address || "";
+
+        return [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//All Keys Trailer Repair//Booking//EN",
+          "CALSCALE:GREGORIAN",
+          "BEGIN:VEVENT",
+          `UID:${escapeICS(b.id || Date.now() + "-" + Math.random())}@allkeys`,
+          `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`,
+          `DTSTART:${dtStart}`,
+          `DTEND:${dtEnd}`,
+          `SUMMARY:${escapeICS(summary)}`,
+          `DESCRIPTION:${escapeICS(description)}`,
+          location ? `LOCATION:${escapeICS(location)}` : "",
+          "END:VEVENT",
+          "END:VCALENDAR",
+        ]
+          .filter(Boolean)
+          .join("\r\n");
+      }
+
+      // Clear last booking when they leave to book again
+      bookAnother.addEventListener("click", () => {
+        localStorage.removeItem("last_booking");
+      });
+
+      if (!raw) {
+        addRow("Status", "No booking details found.");
+        addCalBtn.style.display = "none";
+      } else {
+        try {
+          const b = JSON.parse(raw);
+
+          addRow("Date", b.date || "—");
+          addRow("Time Slot", b.slotLabel || "—");
+          addRow("Name", b.name || "—");
+          addRow("Phone", b.phone || "—");
+          if (b.email) addRow("Email", b.email);
+          if (b.address) addRow("Address", b.address);
+          if (b.notes) addRow("Notes", b.notes);
+          if (b.id) addRow("Confirmation #", b.id);
+
+          const ics = buildICS(b);
+          const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          addCalBtn.href = url;
+        } catch (e) {
+          addRow("Status", "Booking confirmed.");
+          addCalBtn.style.display = "none";
+        }
+      }
+    </script>
+  </body>
+</html>
