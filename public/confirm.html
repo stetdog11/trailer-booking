@@ -70,7 +70,6 @@
         font-weight: 700;
         white-space: nowrap;
       }
-
       .card {
         background: rgba(255, 255, 255, 0.92);
         border-radius: 14px;
@@ -133,6 +132,12 @@
         font-size: 13px;
         line-height: 1.4;
       }
+      .closeNote {
+        margin-top: 6px;
+        font-size: 14px;
+        font-weight: 900;
+        color: #0f172a;
+      }
       .foot {
         text-align: center;
         color: rgba(15, 23, 42, 0.55);
@@ -176,6 +181,7 @@
           Need to change your appointment? Please call/text us. Online bookings
           can’t be edited after submission.
         </div>
+        <div class="closeNote">✅ You can close this window now.</div>
 
         <div class="foot">© All Keys Trailer Repair</div>
       </div>
@@ -202,7 +208,6 @@
           .replace(/;/g, "\\;");
       }
 
-      // Build a simple calendar invite (local time, no timezone math)
       function buildICS(b) {
         const slotMap = {
           "9:00 AM - 12:00 PM": { start: "090000", end: "120000" },
@@ -244,14 +249,12 @@
           .join("\r\n");
       }
 
-      // Clear last booking when they leave to book again
       bookAnother.addEventListener("click", () => {
         localStorage.removeItem("last_booking");
         localStorage.removeItem("name");
         localStorage.removeItem("booking");
       });
 
-      // Helper: safely parse JSON
       function safeParse(str) {
         try {
           return JSON.parse(str);
@@ -270,7 +273,6 @@
           addRow("Status", "Booking confirmed.");
           addCalBtn.style.display = "none";
         } else {
-          // ✅ Force name fallback(s) if last_booking is missing it
           if (!b.name) {
             const bookingObj = safeParse(localStorage.getItem("booking") || "");
             b.name =
@@ -292,8 +294,7 @@
 
           const ics = buildICS(b);
           const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          addCalBtn.href = url;
+          addCalBtn.href = URL.createObjectURL(blob);
         }
       }
     </script>

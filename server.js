@@ -198,6 +198,18 @@ app.get("/admin/bookings", adminAuth, (req, res) => {
 app.post("/admin/cancel", adminAuth, (req, res) => {
   const { id } = req.body;
   if (!id) return res.status(400).json({ error: "Missing id" });
+  app.post("/admin/complete", adminAuth, (req, res) => {
+    const { id } = req.body;
+
+    db.run(
+      "UPDATE bookings SET status = 'completed' WHERE id = ?",
+      [id],
+      (err) => {
+        if (err) return res.status(500).json(err);
+        res.json({ success: true });
+      },
+    );
+  });
 
   db.get("SELECT * FROM bookings WHERE id = ?", [id], async (err, row) => {
     if (err) return res.status(500).json({ error: "DB error" });

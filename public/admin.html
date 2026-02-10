@@ -60,6 +60,15 @@
         background: #334155;
         color: #e5e7eb;
       }
+      button.danger {
+        background: #ef4444;
+        color: #450a0a;
+      }
+      button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
@@ -77,6 +86,7 @@
         font-size: 12px;
         letter-spacing: 0.04em;
       }
+
       .pill {
         display: inline-block;
         padding: 4px 10px;
@@ -88,38 +98,26 @@
         background: #1f2937;
         color: #e5e7eb;
       }
-      .completed {
-        background: #16a34a;
-        color: #e6ffef;
-      }
       .canceled {
         background: #7f1d1d;
         color: #fee2e2;
       }
-      .danger {
-        background: #ef4444;
-        color: #450a0a;
+      .completed {
+        background: #14532d;
+        color: #dcfce7;
       }
+
       .muted {
         color: #9ca3af;
       }
       .nowrap {
         white-space: nowrap;
       }
-      .btnSmall {
-        padding: 6px 8px;
-        border-radius: 8px;
-        font-weight: 900;
-        cursor: pointer;
-        border: 0;
-      }
-      .btnComplete {
-        background: #10b981;
-        color: #042014;
-      }
-      .btnCancel {
-        background: #ef4444;
-        color: #fff;
+      .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
       }
     </style>
   </head>
@@ -127,15 +125,12 @@
     <div class="wrap">
       <div class="card">
         <h1>Admin — Bookings</h1>
-        <div class="row" style="align-items: center">
+        <div class="row">
           <label class="muted">Filter by date (optional):</label>
           <input id="date" type="date" />
           <button id="load">Load</button>
-          <button class="secondary" id="loadAll">Load all</button>
-          <button class="secondary" id="refresh" style="margin-left: auto">
-            Refresh
-          </button>
-          <span class="muted" id="status" style="margin-left: 10px"></span>
+          <button class="secondary" id="loadUpcoming">Load upcoming</button>
+          <span class="muted" id="status"></span>
         </div>
       </div>
 
@@ -164,117 +159,154 @@
       const statusEl = document.getElementById("status");
       const dateEl = document.getElementById("date");
 
-      const slotMap = {
-        1: "9:00 AM - 12:00 PM",
-        2: "12:00 PM - 3:00 PM",
-        3: "3:00 PM - 6:00 PM",
-      };
-
       function esc(s) {
-        return String(s || "")
+        return String(s ?? "")
           .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;");
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
       }
 
-      async function load(date) {
+      function ymdToday() {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+      }
+
+      function statusPill(status) {
+        if (status === "canceled")
+          return `<span class="pill canceled">canceled</span>`;
+        if (status === "completed")
+          return `<span class="pill completed">completed</span>`;
+        return `<span class="pill booked">booked</span>`;
+      }
+
+      async function apiPost(url, body) {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        return res;
+      }
+
+      async function load({ date = "", upcoming = false } = {}) {
         statusEl.textContent = "Loading...";
         rowsEl.innerHTML = "";
-        const url = date
-          ? `/admin/bookings?date=${encodeURIComponent(date)}`
-          : `/admin/bookings`;
+
+        let url = "/admin/bookings";
+        if (date) {
+          url = `/admin/bookings?date=${encodeURIComponent(date)}`;
+        } else if (upcoming) {
+          // If your server already filters upcoming, it will just work.
+          // If not, we still filter client-side below.
+          url = "/admin/bookings";
+        }
+
         const res = await fetch(url);
-        if (!res.ok) {
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
           statusEl.textContent = "Error loading bookings.";
           return;
         }
-        const data = await res.json();
-        statusEl.textContent = `${data.length} booking(s)`;
-        data.forEach((b) => {
+
+        // Client-side "upcoming" filter (safe even if server doesn't do it)
+        let rows = data;
+        if (upcoming && !date) {
+          const today = ymdToday();
+          rows = rows
+            .filter((b) => (b.status || "booked") === "booked")
+            .filter((b) => String(b.date || "") >= today);
+        }
+
+        statusEl.textContent = `${rows.length} booking(s)`;
+
+        rows.forEach((b) => {
           const tr = document.createElement("tr");
+          const st = (b.status || "booked").toLowerCase();
 
-          const statusPill =
-            b.status === "canceled"
-              ? `<span class="pill canceled">canceled</span>`
-              : b.status === "completed"
-                ? `<span class="pill completed">completed</span>`
-                : `<span class="pill booked">booked</span>`;
-
-          const actions =
-            b.status === "booked"
-              ? `<button class="btnSmall btnComplete" data-id="${b.id}" data-action="complete">Complete</button>
-                 <button class="btnSmall btnCancel" data-id="${b.id}" data-action="cancel">Cancel</button>`
-              : `<span class="muted">—</span>`;
+          let actionHtml = `<span class="muted">—</span>`;
+          if (st === "booked") {
+            actionHtml = `
+              <div class="actions">
+                <button class="completeBtn" data-id="${b.id}">Complete</button>
+                <button class="danger cancelBtn" data-id="${b.id}">Cancel</button>
+              </div>
+            `;
+          }
 
           tr.innerHTML = `
             <td class="nowrap">${esc(b.date)}</td>
-            <td class="nowrap">${esc(slotMap[b.slot] || b.slot)}</td>
+            <td class="nowrap">${esc(b.slot)}</td>
             <td>${esc(b.name)}</td>
             <td class="nowrap">${esc(b.phone)}</td>
             <td>${esc(b.email)}</td>
             <td>${esc(b.address)}</td>
             <td>${esc(b.notes)}</td>
-            <td class="nowrap">${statusPill}</td>
-            <td class="nowrap">${actions}</td>
+            <td class="nowrap">${statusPill(st)}</td>
+            <td class="nowrap">${actionHtml}</td>
           `;
           rowsEl.appendChild(tr);
         });
 
-        // wire buttons
-        rowsEl.querySelectorAll("button[data-action]").forEach((btn) => {
+        // Wire up Complete
+        rowsEl.querySelectorAll("button.completeBtn").forEach((btn) => {
           btn.addEventListener("click", async () => {
-            const id = btn.getAttribute("data-id");
-            const action = btn.getAttribute("data-action");
-
-            if (action === "cancel" && !confirm("Cancel this booking?")) return;
-            if (
-              action === "complete" &&
-              !confirm("Mark this booking as completed?")
-            )
-              return;
+            const id = Number(btn.getAttribute("data-id"));
+            if (!confirm("Mark this booking as COMPLETED?")) return;
 
             btn.disabled = true;
-            btn.textContent =
-              action === "cancel" ? "Canceling..." : "Completing...";
+            btn.textContent = "Saving...";
 
-            const endpoint =
-              action === "cancel" ? "/admin/cancel" : "/admin/complete";
-
-            const res = await fetch(endpoint, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: Number(id) }),
-            });
-
+            const res = await apiPost("/admin/complete", { id });
             if (!res.ok) {
-              alert("Action failed.");
+              alert("Complete failed.");
               btn.disabled = false;
-              btn.textContent = action === "cancel" ? "Cancel" : "Complete";
+              btn.textContent = "Complete";
               return;
             }
 
-            // reload current filter
-            await load(dateEl.value || "");
+            await load({ date: dateEl.value || "", upcoming: !dateEl.value });
+          });
+        });
+
+        // Wire up Cancel
+        rowsEl.querySelectorAll("button.cancelBtn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = Number(btn.getAttribute("data-id"));
+            if (!confirm("Cancel this booking?")) return;
+
+            btn.disabled = true;
+            btn.textContent = "Canceling...";
+
+            const res = await apiPost("/admin/cancel", { id });
+            if (!res.ok) {
+              alert("Cancel failed.");
+              btn.disabled = false;
+              btn.textContent = "Cancel";
+              return;
+            }
+
+            await load({ date: dateEl.value || "", upcoming: !dateEl.value });
           });
         });
       }
 
       document
         .getElementById("load")
-        .addEventListener("click", () => load(dateEl.value));
-      document.getElementById("loadAll").addEventListener("click", () => {
-        dateEl.value = "";
-        load("");
-      });
-      document
-        .getElementById("refresh")
-        .addEventListener("click", () => load(dateEl.value || ""));
+        .addEventListener("click", () =>
+          load({ date: dateEl.value || "", upcoming: false }),
+        );
 
-      // Auto-load today (if supported)
-      (function init() {
-        const t = new Date();
+      document.getElementById("loadUpcoming").addEventListener("click", () => {
         dateEl.value = "";
-        load("");
-      })();
+        load({ date: "", upcoming: true });
+      });
+
+      // default: upcoming
+      load({ upcoming: true });
     </script>
   </body>
 </html>
