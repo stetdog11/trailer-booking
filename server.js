@@ -3,7 +3,6 @@ const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 const cors = require("cors");
 const basicAuth = require("express-basic-auth");
-console.log("RUNNING SERVER.JS VERSION 1");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,9 +45,15 @@ const adminAuth = basicAuth({
   challenge: true,
 });
 
-// ===== Admin Routes (PROTECTED) =====
+// ===== ADMIN ROUTES (MUST COME BEFORE static) =====
+app.get("/admin", adminAuth, (req, res) => {
+  res.redirect("/admin.html");
+});
 
-app.use("/admin.html", adminAuth);
+app.get("/admin.html", adminAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
 app.use("/admin/bookings", adminAuth);
 app.use("/admin/cancel", adminAuth);
 
@@ -85,19 +90,13 @@ app.post("/book", (req, res) => {
     `,
     [date, slot, name, phone, email, address, notes],
     function (err) {
-      if (err) {
-        return res.status(400).json({ error: "Slot already booked" });
-      }
-
-      res.json({
-        success: true,
-        id: this.lastID,
-      });
+      if (err) return res.status(400).json({ error: "Slot already booked" });
+      res.json({ success: true, id: this.lastID });
     },
   );
 });
 
-// ===== Admin: View Bookings =====
+// ===== Admin APIs =====
 app.get("/admin/bookings", (req, res) => {
   const { date } = req.query;
 
@@ -113,27 +112,20 @@ app.get("/admin/bookings", (req, res) => {
   });
 });
 
-// ===== Admin: Cancel Booking =====
 app.post("/admin/cancel", (req, res) => {
   const { id } = req.body;
 
   db.run(
     "UPDATE bookings SET status = 'canceled' WHERE id = ?",
     [id],
-    function (err) {
+    (err) => {
       if (err) return res.status(500).json(err);
       res.json({ success: true });
     },
   );
 });
-app.get("/admin", adminAuth, (req, res) => {
-  res.redirect(302, "/admin.html");
-});
-app.get("/admin/", adminAuth, (req, res) => {
-  res.redirect(302, "/admin.html");
-});
 
-// ===== Static Files (LAST) =====
+// ===== Static Files (ABSOLUTELY LAST) =====
 app.use(express.static("public"));
 
 // ===== Start =====
