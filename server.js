@@ -124,6 +124,9 @@ app.post("/admin/cancel", (req, res) => {
     },
   );
 });
+app.get("/admin", adminAuth, (req, res) => {
+  res.redirect("/admin.html");
+});
 
 // ===== Static Files (ABSOLUTELY LAST) =====
 app.use(express.static("public"));
