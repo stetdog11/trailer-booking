@@ -5,17 +5,15 @@ const cors = require("cors");
 const basicAuth = require("express-basic-auth");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware
+// ===== Middleware =====
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
 
-// Database
+// ===== Database =====
 const db = new sqlite3.Database("./bookings.db");
 
-// Create table if it doesn't exist
 db.run(`
   CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,13 +29,14 @@ db.run(`
   )
 `);
 
-// Time slots (fixed)
+// ===== Slots =====
 const slots = {
   1: "9:00 AM - 12:00 PM",
   2: "12:00 PM - 3:00 PM",
   3: "3:00 PM - 6:00 PM",
 };
-// ===== Admin lock (Basic Auth) =====
+
+// ===== Admin Auth =====
 const ADMIN_USER = process.env.ADMIN_USER || "allkeys";
 const ADMIN_PASS = process.env.ADMIN_PASS || "seadog";
 
@@ -46,11 +45,16 @@ const adminAuth = basicAuth({
   challenge: true,
 });
 
-// Protect admin HTML + admin API
+// ===== Admin Routes (PROTECTED) =====
+app.get("/admin", adminAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
 app.use("/admin.html", adminAuth);
 app.use("/admin/bookings", adminAuth);
+app.use("/admin/cancel", adminAuth);
 
-// Get availability for a date
+// ===== Availability =====
 app.get("/availability", (req, res) => {
   const { date } = req.query;
 
@@ -60,11 +64,11 @@ app.get("/availability", (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json(err);
 
-      const bookedSlots = rows.map((r) => r.slot);
-      const availability = Object.keys(slots).map((slot) => ({
-        slot: Number(slot),
-        label: slots[slot],
-        available: !bookedSlots.includes(Number(slot)),
+      const booked = rows.map((r) => r.slot);
+      const availability = Object.keys(slots).map((s) => ({
+        slot: Number(s),
+        label: slots[s],
+        available: !booked.includes(Number(s)),
       }));
 
       res.json(availability);
@@ -72,7 +76,7 @@ app.get("/availability", (req, res) => {
   );
 });
 
-// Book a slot
+// ===== Book Slot =====
 app.post("/book", (req, res) => {
   const { date, slot, name, phone, email, address, notes } = req.body;
 
@@ -86,26 +90,49 @@ app.post("/book", (req, res) => {
       if (err) {
         return res.status(400).json({ error: "Slot already booked" });
       }
+
+      res.json({
+        success: true,
+        id: this.lastID,
+      });
+    },
+  );
+});
+
+// ===== Admin: View Bookings =====
+app.get("/admin/bookings", (req, res) => {
+  const { date } = req.query;
+
+  const sql = date
+    ? "SELECT * FROM bookings WHERE date = ? ORDER BY date, slot"
+    : "SELECT * FROM bookings WHERE status = 'booked' ORDER BY date, slot";
+
+  const params = date ? [date] : [];
+
+  db.all(sql, params, (err, rows) => {
+    if (err) return res.status(500).json(err);
+    res.json(rows);
+  });
+});
+
+// ===== Admin: Cancel Booking =====
+app.post("/admin/cancel", (req, res) => {
+  const { id } = req.body;
+
+  db.run(
+    "UPDATE bookings SET status = 'canceled' WHERE id = ?",
+    [id],
+    function (err) {
+      if (err) return res.status(500).json(err);
       res.json({ success: true });
     },
   );
 });
 
-// Admin view
-app.get("/admin/bookings", (req, res) => {
-  const { date } = req.query;
+// ===== Static Files (LAST) =====
+app.use(express.static("public"));
 
-  db.all(
-    "SELECT * FROM bookings WHERE date = ? ORDER BY slot",
-    [date],
-    (err, rows) => {
-      if (err) return res.status(500).json(err);
-      res.json(rows);
-    },
-  );
-});
-
-// Start server
+// ===== Start =====
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
