@@ -1,0 +1,684 @@
+<!doctype html>
+<html>
+  <head>
+    <title>All Keys Trailer — Booking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #5fbad6;
+      }
+      .wrap {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 18px;
+      }
+
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15);
+        margin-bottom: 14px;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo img {
+        width: 110px;
+        height: auto;
+        border-radius: 12px;
+        background: #fff;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0;
+      }
+      .muted {
+        color: #444;
+        font-size: 14px;
+        margin: 6px 0 0;
+        line-height: 1.35;
+      }
+      .emergency {
+        color: #b00020;
+        font-weight: 900;
+      }
+
+      .callBtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 14px;
+        border-radius: 14px;
+        text-decoration: none;
+        background: #0f172a;
+        color: #fff;
+        font-weight: 900;
+        border: 0;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        white-space: nowrap;
+      }
+      .callBtn:active {
+        transform: translateY(1px);
+      }
+
+      /* Calendar */
+      .calTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      .calTitle {
+        font-weight: 900;
+        font-size: 16px;
+      }
+      .calBtns {
+        display: flex;
+        gap: 8px;
+      }
+      .calBtn {
+        border: 1px solid #ddd;
+        background: #fff;
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 800;
+      }
+      .calBtn:hover {
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+      }
+
+      .calGrid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+      }
+      .dow {
+        font-size: 12px;
+        color: #555;
+        text-align: center;
+        padding: 6px 0;
+        font-weight: 700;
+      }
+
+      .day {
+        border: 1px solid #eee;
+        background: #fff;
+        border-radius: 14px;
+        padding: 12px 0;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+        font-weight: 900;
+        position: relative;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+      }
+      .day:hover {
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14);
+      }
+      .day.mutedDay {
+        opacity: 0.35;
+        cursor: default;
+        box-shadow: none !important;
+      }
+      .day.selected {
+        outline: 3px solid rgba(15, 23, 42, 0.25);
+        border-color: #0f172a;
+      }
+
+      .dot {
+        position: absolute;
+        bottom: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #0f172a;
+        opacity: 0.65;
+      }
+      .dot.full {
+        background: #b00020;
+        opacity: 0.9;
+      }
+
+      /* Slots + form */
+      .subline {
+        font-size: 13px;
+        color: #333;
+        margin-top: 8px;
+        font-weight: 800;
+      }
+      .slots {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .slotBtn {
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid #ddd;
+        background: #fff;
+        cursor: pointer;
+        font-size: 15px;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+      }
+      .slotBtn:hover {
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+      }
+      .slotBtn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .pill {
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        font-weight: 900;
+      }
+      .pill.bad {
+        background: #ffecec;
+        color: #b00020;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      label {
+        font-size: 13px;
+        color: #333;
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 900;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+
+      .primary {
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+        border: 0;
+        background: #0f172a;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: 900;
+      }
+      .primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .msg {
+        margin: 10px 0 0;
+        font-weight: 900;
+      }
+      .ok {
+        color: #0a7a2f;
+      }
+      .err {
+        color: #b00020;
+      }
+
+      .footer {
+        text-align: center;
+        color: #0f172a;
+        font-size: 12px;
+        padding: 10px 0 20px;
+        font-weight: 900;
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div class="logo">
+            <img src="logo.png" alt="All Keys Trailer Repair" />
+            <div>
+              <h1>All Keys Trailer Repair</h1>
+              <p class="muted">
+                Mobile Trailer Repair • 9:00am–6:00pm • 3-hour slots<br />
+                <span class="emergency">Emergency?</span> Tap to call/text
+              </p>
+            </div>
+          </div>
+
+          <a class="callBtn" id="callBtn" href="tel:+13055708440"
+            >📞 Call/Text (305) 570-8440</a
+          >
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="calTop">
+          <div class="calTitle" id="calTitle">Calendar</div>
+          <div class="calBtns">
+            <button class="calBtn" id="prevBtn">Prev</button>
+            <button class="calBtn" id="todayBtn">Today</button>
+            <button class="calBtn" id="nextBtn">Next</button>
+          </div>
+        </div>
+
+        <div class="calGrid" id="dowRow"></div>
+        <div class="calGrid" id="calGrid"></div>
+
+        <div class="subline" id="selectedLine">
+          Select a day to see available slots.
+        </div>
+      </div>
+
+      <div class="card" id="slotsCard" style="display: none">
+        <h3 style="margin-top: 0">Available slots</h3>
+        <div id="slots" class="slots"></div>
+      </div>
+
+      <div class="card" id="formCard" style="display: none">
+        <h3 style="margin-top: 0">Your info</h3>
+
+        <div class="row">
+          <div>
+            <label>Name</label>
+            <input placeholder="John Smith" id="name" required />
+          </div>
+          <div>
+            <label>Phone</label>
+            <input placeholder="(305) 570-8440" id="phone" required />
+          </div>
+        </div>
+
+        <div style="height: 10px"></div>
+
+        <div class="row">
+          <div>
+            <label>Email (optional)</label>
+            <input placeholder="you@email.com" id="email" />
+          </div>
+          <div>
+            <label>Address</label>
+            <input placeholder="Service location" id="address" required />
+          </div>
+        </div>
+
+        <div style="height: 10px"></div>
+
+        <label>Notes (optional)</label>
+        <textarea
+          placeholder="Trailer type + what’s going on..."
+          id="notes"
+        ></textarea>
+
+        <div style="height: 12px"></div>
+        <button class="primary" id="bookBtn">Book Appointment</button>
+
+        <p class="msg" id="msg"></p>
+      </div>
+
+      <div class="footer">© All Keys Trailer Repair</div>
+    </div>
+
+    <script>
+      // ===== SETTINGS =====
+      const SAME_DAY_CUTOFF_HOUR = 15; // 3pm
+      const SAME_DAY_CUTOFF_MIN = 0;
+
+      // ===== helpers =====
+      function pad(n) {
+        return String(n).padStart(2, "0");
+      }
+      function toYMD(d) {
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
+      function monthName(m) {
+        return [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ][m];
+      }
+      function startOfDay(d) {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        return x;
+      }
+      function nowPastCutoff() {
+        const n = new Date();
+        const cutoff = new Date();
+        cutoff.setHours(SAME_DAY_CUTOFF_HOUR, SAME_DAY_CUTOFF_MIN, 0, 0);
+        return n >= cutoff;
+      }
+
+      // ===== state =====
+      let viewDate = new Date();
+      let selectedDate = null;
+      let selectedSlot = null;
+      let selectedLabel = null;
+
+      // cache fully booked flags for visible month
+      const monthStatusCache = new Map();
+
+      // ===== DOM =====
+      const calTitle = document.getElementById("calTitle");
+      const dowRow = document.getElementById("dowRow");
+      const calGrid = document.getElementById("calGrid");
+      const selectedLine = document.getElementById("selectedLine");
+      const slotsCard = document.getElementById("slotsCard");
+      const slotsDiv = document.getElementById("slots");
+      const formCard = document.getElementById("formCard");
+      const msg = document.getElementById("msg");
+      const bookBtn = document.getElementById("bookBtn");
+
+      // DOW header
+      (function renderDOW() {
+        const dows = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        dowRow.innerHTML = "";
+        dows.forEach((d) => {
+          const el = document.createElement("div");
+          el.className = "dow";
+          el.textContent = d;
+          dowRow.appendChild(el);
+        });
+      })();
+
+      function resetBookingUI() {
+        slotsCard.style.display = "none";
+        formCard.style.display = "none";
+        slotsDiv.innerHTML = "";
+        selectedSlot = null;
+        selectedLabel = null;
+        msg.textContent = "";
+        msg.className = "msg";
+        bookBtn.disabled = false;
+      }
+
+      function setSelectedLine(text) {
+        selectedLine.textContent =
+          text ||
+          (selectedDate
+            ? `Selected: ${selectedDate}`
+            : "Select a day to see available slots.");
+      }
+
+      function renderCalendar() {
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+
+        calTitle.textContent = `${monthName(month)} ${year}`;
+        calGrid.innerHTML = "";
+
+        const firstOfMonth = new Date(year, month, 1);
+        const startDow = firstOfMonth.getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < startDow; i++) {
+          const blank = document.createElement("div");
+          blank.className = "day mutedDay";
+          blank.textContent = "";
+          calGrid.appendChild(blank);
+        }
+
+        const today = startOfDay(new Date());
+        const todayYMD = toYMD(today);
+        const cutoffBlocksToday = nowPastCutoff();
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const cellDate = startOfDay(new Date(year, month, day));
+          const ymd = toYMD(cellDate);
+
+          const btn = document.createElement("div");
+          btn.className = "day";
+          btn.textContent = day;
+          btn.dataset.ymd = ymd;
+
+          if (selectedDate === ymd) btn.classList.add("selected");
+
+          // Past days greyed
+          if (cellDate < today) {
+            btn.classList.add("mutedDay");
+            calGrid.appendChild(btn);
+            continue;
+          }
+
+          // Same-day cutoff blocks today
+          if (ymd === todayYMD && cutoffBlocksToday) {
+            btn.classList.add("mutedDay");
+            const dot = document.createElement("div");
+            dot.className = "dot full";
+            btn.appendChild(dot);
+            calGrid.appendChild(btn);
+            continue;
+          }
+
+          // dot placeholder
+          const dot = document.createElement("div");
+          dot.className = "dot";
+          btn.appendChild(dot);
+
+          btn.onclick = async () => {
+            if (btn.classList.contains("mutedDay")) return;
+
+            selectedDate = ymd;
+            renderCalendar();
+
+            resetBookingUI();
+            setSelectedLine();
+
+            slotsCard.style.display = "block";
+            slotsDiv.innerHTML = "Loading slots...";
+
+            const res = await fetch(`/availability?date=${selectedDate}`);
+            const slots = await res.json();
+            renderSlots(slots);
+
+            // cutoff safety if time passes
+            if (selectedDate === todayYMD && nowPastCutoff()) {
+              resetBookingUI();
+              setSelectedLine(
+                "Same-day booking is closed after 3:00pm. Please choose a future date.",
+              );
+              renderCalendar();
+            }
+          };
+
+          calGrid.appendChild(btn);
+        }
+
+        autoBlockFullyBookedDaysForVisibleMonth().catch(() => {});
+      }
+
+      async function autoBlockFullyBookedDaysForVisibleMonth() {
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const today = startOfDay(new Date());
+        const todayYMD = toYMD(today);
+        const cutoffBlocksToday = nowPastCutoff();
+
+        const dateList = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+          const cell = startOfDay(new Date(year, month, d));
+          const ymd = toYMD(cell);
+
+          if (cell < today) continue;
+          if (ymd === todayYMD && cutoffBlocksToday) continue;
+
+          if (monthStatusCache.has(ymd)) continue;
+          dateList.push(ymd);
+        }
+
+        for (const ymd of dateList) {
+          const res = await fetch(`/availability?date=${ymd}`);
+          const slots = await res.json();
+          const fullyBooked = slots.every((s) => !s.available);
+
+          monthStatusCache.set(ymd, { fullyBooked });
+
+          const cellEl = calGrid.querySelector(`[data-ymd="${ymd}"]`);
+          if (!cellEl) continue;
+
+          if (fullyBooked) {
+            cellEl.classList.add("mutedDay");
+            const dot = cellEl.querySelector(".dot");
+            if (dot) dot.classList.add("full");
+            cellEl.onclick = null;
+          }
+        }
+      }
+
+      function renderSlots(slots) {
+        slotsDiv.innerHTML = "";
+        slots.forEach((s) => {
+          const btn = document.createElement("button");
+          btn.className = "slotBtn";
+          btn.disabled = !s.available;
+
+          const statusPill = s.available
+            ? `<span class="pill">Available</span>`
+            : `<span class="pill bad">Booked</span>`;
+
+          btn.innerHTML = `
+          <div>
+            <div style="font-weight:900;">${s.label}</div>
+            <div style="font-size:12px;color:#666;font-weight:800;">3 hours</div>
+          </div>
+          ${statusPill}
+        `;
+
+          btn.onclick = () => {
+            selectedSlot = s.slot;
+            selectedLabel = s.label;
+            formCard.style.display = "block";
+            msg.textContent = "";
+            msg.className = "msg";
+            window.scrollTo({
+              top: document.body.scrollHeight,
+              behavior: "smooth",
+            });
+          };
+
+          slotsDiv.appendChild(btn);
+        });
+      }
+
+      bookBtn.addEventListener("click", async () => {
+        if (!selectedDate || !selectedSlot) return;
+
+        const today = startOfDay(new Date());
+        const todayYMD = toYMD(today);
+
+        if (selectedDate === todayYMD && nowPastCutoff()) {
+          resetBookingUI();
+          setSelectedLine(
+            "Same-day booking is closed after 3:00pm. Please choose a future date.",
+          );
+          renderCalendar();
+          return;
+        }
+
+        bookBtn.disabled = true;
+        msg.textContent = "Booking...";
+        msg.className = "msg";
+
+        const body = {
+          date: selectedDate,
+          slot: selectedSlot,
+          name: name.value,
+          phone: phone.value,
+          email: email.value,
+          address: address.value,
+          notes: notes.value,
+        };
+
+        const res = await fetch("/book", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (res.ok) {
+          msg.textContent = `Booked! (${selectedLabel})`;
+          msg.className = "msg ok";
+
+          const r2 = await fetch(`/availability?date=${selectedDate}`);
+          const updated = await r2.json();
+          renderSlots(updated);
+
+          const fullyBooked = updated.every((s) => !s.available);
+          monthStatusCache.set(selectedDate, { fullyBooked });
+
+          if (fullyBooked) renderCalendar();
+        } else {
+          msg.textContent = "That slot just got taken. Pick another one.";
+          msg.className = "msg err";
+        }
+
+        bookBtn.disabled = false;
+      });
+
+      document.getElementById("prevBtn").onclick = () => {
+        viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1);
+        renderCalendar();
+      };
+      document.getElementById("nextBtn").onclick = () => {
+        viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
+        renderCalendar();
+      };
+      document.getElementById("todayBtn").onclick = () => {
+        const t = new Date();
+        viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
+        renderCalendar();
+      };
+
+      setSelectedLine();
+      renderCalendar();
+    </script>
+  </body>
+</html>
