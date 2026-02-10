@@ -126,8 +126,11 @@ app.post("/admin/cancel", (req, res) => {
     },
   );
 });
-app.get("/admin.html", adminAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
+app.get("/admin", adminAuth, (req, res) => {
+  res.redirect(302, "/admin.html");
+});
+app.get("/admin/", adminAuth, (req, res) => {
+  res.redirect(302, "/admin.html");
 });
 
 // ===== Static Files (LAST) =====
