@@ -47,9 +47,6 @@ const adminAuth = basicAuth({
 });
 
 // ===== Admin Routes (PROTECTED) =====
-app.get("/admin", adminAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
-});
 
 app.use("/admin.html", adminAuth);
 app.use("/admin/bookings", adminAuth);
@@ -129,7 +126,7 @@ app.post("/admin/cancel", (req, res) => {
     },
   );
 });
-app.get("/admin", adminAuth, (req, res) => {
+app.get("/admin.html", adminAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
