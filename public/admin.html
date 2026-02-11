@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Admin — All Keys Trailer Repair</title>
     <style>
+      :root {
+        --bg: #0b1220;
+        --card: #111827;
+        --card2: #0f172a;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --blue: #60a5fa;
+        --green: #22c55e;
+        --red: #ef4444;
+        --amber: #f59e0b;
+      }
       body {
         margin: 0;
         font-family:
@@ -14,71 +26,195 @@
           Roboto,
           Arial,
           sans-serif;
-        background: #0b1220;
-        color: #e5e7eb;
-        padding: 14px;
+        background:
+          radial-gradient(
+            1200px 600px at 30% -10%,
+            rgba(96, 165, 250, 0.25),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 500px at 90% 10%,
+            rgba(34, 197, 94, 0.15),
+            transparent 55%
+          ),
+          var(--bg);
+        color: var(--text);
+        padding: 16px;
       }
       .wrap {
-        max-width: 1100px;
+        max-width: 1200px;
         margin: 0 auto;
       }
-      .card {
-        background: #111827;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
+
+      .topbar {
+        background: rgba(17, 24, 39, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 16px;
         padding: 14px;
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
         margin-bottom: 12px;
       }
-      h1 {
-        margin: 0 0 10px;
-        font-size: 18px;
-      }
-      .row {
+      .titleRow {
         display: flex;
-        gap: 10px;
         flex-wrap: wrap;
         align-items: center;
+        justify-content: space-between;
+        gap: 12px;
       }
-      input {
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: #0b1220;
-        color: #e5e7eb;
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.2px;
       }
-      button {
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 0;
-        background: #22c55e;
-        color: #052e16;
-        font-weight: 900;
-        cursor: pointer;
-      }
-      button.secondary {
-        background: #334155;
-        color: #e5e7eb;
-      }
-      button.danger {
-        background: #ef4444;
-        color: #450a0a;
-      }
-      button.warn {
-        background: #f59e0b;
-        color: #3b2100;
-      }
-      button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
+      .sub {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 6px;
       }
 
-      .muted {
-        color: #9ca3af;
-        font-size: 13px;
-      }
-      .nowrap {
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.85);
+        color: var(--text);
+        font-weight: 800;
+        font-size: 12px;
         white-space: nowrap;
+      }
+
+      .grid2 {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 980px) {
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: rgba(17, 24, 39, 0.92);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+      }
+
+      /* Calendar */
+      .calTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .calTitle {
+        font-weight: 900;
+        font-size: 14px;
+        color: #cfe6ff;
+      }
+      .calBtns {
+        display: flex;
+        gap: 8px;
+      }
+      .btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.85);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 900;
+      }
+      .btn:hover {
+        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.22);
+      }
+      .btn.primary {
+        background: rgba(34, 197, 94, 0.92);
+        color: #052e16;
+        border-color: rgba(34, 197, 94, 0.4);
+      }
+
+      .calGrid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+      }
+      .dow {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: center;
+        padding: 6px 0;
+        font-weight: 900;
+      }
+
+      .day {
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.85);
+        border-radius: 14px;
+        padding: 12px 0;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+        font-weight: 900;
+        position: relative;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+      }
+      .day:hover {
+        box-shadow: 0 12px 22px rgba(0, 0, 0, 0.32);
+      }
+      .day.mutedDay {
+        opacity: 0.35;
+        cursor: default;
+        box-shadow: none !important;
+      }
+      .day.selected {
+        outline: 3px solid rgba(96, 165, 250, 0.35);
+        border-color: rgba(96, 165, 250, 0.55);
+      }
+
+      .dot {
+        position: absolute;
+        bottom: 7px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: rgba(96, 165, 250, 0.85);
+      }
+      .dot.has {
+        background: rgba(34, 197, 94, 0.9);
+      }
+      .dot.none {
+        background: rgba(148, 163, 184, 0.55);
+      }
+
+      /* Table */
+      .sectionTitle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .sectionTitle h2 {
+        margin: 0;
+        font-size: 14px;
+        color: #cfe6ff;
+      }
+      .statusText {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
       }
 
       table {
@@ -98,229 +234,437 @@
         font-size: 12px;
         letter-spacing: 0.04em;
       }
+      .nowrap {
+        white-space: nowrap;
+      }
+      .muted {
+        color: var(--muted);
+      }
 
-      .pill {
+      .tag {
         display: inline-block;
         padding: 4px 10px;
         border-radius: 999px;
         font-weight: 900;
         font-size: 12px;
+        border: 1px solid var(--border);
       }
-      .p-booked {
-        background: #1f2937;
-        color: #e5e7eb;
+      .tag.booked {
+        background: rgba(96, 165, 250, 0.15);
+        color: #bfdbfe;
       }
-      .p-canceled {
-        background: #7f1d1d;
-        color: #fee2e2;
+      .tag.completed {
+        background: rgba(34, 197, 94, 0.18);
+        color: #bbf7d0;
       }
-      .p-completed {
-        background: #064e3b;
-        color: #d1fae5;
+      .tag.canceled {
+        background: rgba(239, 68, 68, 0.15);
+        color: #fecaca;
       }
 
-      @media (max-width: 820px) {
-        table,
-        thead,
-        tbody,
-        th,
-        td,
-        tr {
-          display: block;
-        }
-        thead {
-          display: none;
-        }
-        tr {
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-          margin-bottom: 10px;
-          padding: 10px;
-          background: #0f172a;
-        }
-        td {
-          border: 0;
-          padding: 6px 0;
-        }
-        td::before {
-          content: attr(data-label);
-          display: block;
-          color: #93c5fd;
-          font-size: 12px;
-          font-weight: 900;
-          margin-bottom: 2px;
-          letter-spacing: 0.02em;
-        }
+      .actionRow {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .mini {
+        padding: 8px 10px;
+        border-radius: 12px;
+        font-weight: 900;
+        border: 0;
+        cursor: pointer;
+      }
+      .mini.complete {
+        background: var(--amber);
+        color: #3b2400;
+      }
+      .mini.cancel {
+        background: var(--red);
+        color: #450a0a;
+      }
+      .mini:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      /* Version badge so you can tell cache vs new */
+      .ver {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(34, 197, 94, 0.92);
+        color: #052e16;
+        padding: 6px 10px;
+        border-radius: 10px;
+        font-weight: 900;
+        z-index: 9999;
+        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
+        font-size: 12px;
       }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <div class="card">
-        <h1>Admin — Bookings</h1>
-        <div class="row">
-          <span class="muted">Filter by date (optional):</span>
-          <input id="date" type="date" />
-          <button id="load">Load</button>
-          <button class="secondary" id="loadAll">Load upcoming</button>
-          <span class="muted" id="status"></span>
+      <div class="topbar">
+        <div class="titleRow">
+          <div>
+            <h1>Admin — Bookings</h1>
+            <div class="sub">
+              Tap a day on the calendar to view bookings. (Works great on
+              mobile)
+            </div>
+          </div>
+
+          <div class="pill" id="whoami">🔒 Protected Admin</div>
         </div>
       </div>
 
-      <div class="card">
-        <table>
-          <thead>
-            <tr>
-              <th class="nowrap">Date</th>
-              <th class="nowrap">Slot</th>
-              <th>Name</th>
-              <th class="nowrap">Phone</th>
-              <th>Email</th>
-              <th>Address</th>
-              <th>Notes</th>
-              <th class="nowrap">Status</th>
-              <th class="nowrap">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
+      <div class="grid2">
+        <div class="card">
+          <div class="calTop">
+            <div class="calTitle" id="calTitle">Calendar</div>
+            <div class="calBtns">
+              <button class="btn" id="prevBtn">Prev</button>
+              <button class="btn" id="todayBtn">Today</button>
+              <button class="btn" id="nextBtn">Next</button>
+            </div>
+          </div>
+
+          <div class="calGrid" id="dowRow"></div>
+          <div class="calGrid" id="calGrid"></div>
+
+          <div class="sub" style="margin-top: 10px">
+            Selected:
+            <span id="selectedText" class="pill" style="padding: 6px 10px"
+              >—</span
+            >
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="sectionTitle">
+            <h2 id="listTitle">Bookings</h2>
+            <div class="statusText" id="status">—</div>
+          </div>
+
+          <div style="overflow: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th class="nowrap">Date</th>
+                  <th class="nowrap">Slot</th>
+                  <th>Name</th>
+                  <th class="nowrap">Phone</th>
+                  <th>Email</th>
+                  <th>Address</th>
+                  <th>Notes</th>
+                  <th class="nowrap">Status</th>
+                  <th class="nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+
+          <div class="sub" style="margin-top: 10px">
+            Tip: if you don’t see updates, hard refresh (Ctrl+Shift+R) or open
+            <span class="pill">/admin.html?v=123</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <script>
-      const rowsEl = document.getElementById("rows");
-      const statusEl = document.getElementById("status");
-      const dateEl = document.getElementById("date");
+    <div class="ver">ADMIN vCAL-1</div>
 
+    <script>
+      // ===== helpers =====
+      function pad(n) {
+        return String(n).padStart(2, "0");
+      }
+      function toYMD(d) {
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
+      function startOfDay(d) {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        return x;
+      }
+      function monthName(m) {
+        return [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ][m];
+      }
       function esc(s) {
         return String(s || "")
           .replaceAll("&", "&amp;")
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;");
       }
-
-      function statusPill(status) {
-        if (status === "canceled")
-          return `<span class="pill p-canceled">canceled</span>`;
-        if (status === "completed")
-          return `<span class="pill p-completed">completed</span>`;
-        return `<span class="pill p-booked">booked</span>`;
+      function statusTag(s) {
+        const v = (s || "booked").toLowerCase();
+        if (v === "completed")
+          return `<span class="tag completed">completed</span>`;
+        if (v === "canceled")
+          return `<span class="tag canceled">canceled</span>`;
+        return `<span class="tag booked">booked</span>`;
       }
 
-      async function load(date) {
+      // ===== DOM =====
+      const calTitle = document.getElementById("calTitle");
+      const dowRow = document.getElementById("dowRow");
+      const calGrid = document.getElementById("calGrid");
+      const rowsEl = document.getElementById("rows");
+      const statusEl = document.getElementById("status");
+      const selectedText = document.getElementById("selectedText");
+      const listTitle = document.getElementById("listTitle");
+
+      // ===== state =====
+      let viewDate = new Date();
+      let selectedDate = toYMD(new Date());
+      const cacheHasBookings = new Map(); // ymd -> boolean
+
+      // DOW header
+      (function renderDOW() {
+        const dows = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        dowRow.innerHTML = "";
+        dows.forEach((d) => {
+          const el = document.createElement("div");
+          el.className = "dow";
+          el.textContent = d;
+          dowRow.appendChild(el);
+        });
+      })();
+
+      async function fetchBookingsForDate(ymd) {
+        const res = await fetch(
+          `/admin/bookings?date=${encodeURIComponent(ymd)}`,
+        );
+        if (!res.ok) return null;
+        return await res.json();
+      }
+
+      async function renderBookings(ymd) {
+        selectedText.textContent = ymd || "—";
+        listTitle.textContent = ymd ? `Bookings — ${ymd}` : "Bookings";
         statusEl.textContent = "Loading...";
         rowsEl.innerHTML = "";
 
-        const url = date
-          ? `/admin/bookings?date=${encodeURIComponent(date)}`
-          : `/admin/bookings`;
-
-        const res = await fetch(url);
-        if (!res.ok) {
-          statusEl.textContent = "Error loading bookings.";
+        if (!ymd) {
+          statusEl.textContent = "Pick a date.";
           return;
         }
 
-        const data = await res.json();
+        const data = await fetchBookingsForDate(ymd);
         if (!Array.isArray(data)) {
           statusEl.textContent = "Error loading bookings.";
           return;
         }
 
         statusEl.textContent = `${data.length} booking(s)`;
+        cacheHasBookings.set(ymd, data.length > 0);
+        updateDotForDay(ymd, data.length > 0);
 
         data.forEach((b) => {
           const tr = document.createElement("tr");
 
-          const canCancel = b.status === "booked";
-          const canComplete = b.status === "booked";
+          const phone = b.phone || "";
+          const phoneLink = phone
+            ? `<a href="tel:${esc(phone)}" style="color:#bfdbfe;font-weight:900;text-decoration:none;">${esc(phone)}</a>`
+            : `<span class="muted">—</span>`;
+
+          const actions =
+            String(b.status || "booked").toLowerCase() === "canceled" ||
+            String(b.status || "").toLowerCase() === "completed"
+              ? `<span class="muted">—</span>`
+              : `
+                <div class="actionRow">
+                  <button class="mini complete" data-action="complete" data-id="${b.id}">Complete</button>
+                  <button class="mini cancel" data-action="cancel" data-id="${b.id}">Cancel</button>
+                </div>
+              `;
 
           tr.innerHTML = `
-            <td data-label="Date" class="nowrap">${esc(b.date)}</td>
-            <td data-label="Slot" class="nowrap">${esc(b.slot)}</td>
-            <td data-label="Name">${esc(b.name)}</td>
-            <td data-label="Phone" class="nowrap">${esc(b.phone)}</td>
-            <td data-label="Email">${esc(b.email)}</td>
-            <td data-label="Address">${esc(b.address)}</td>
-            <td data-label="Notes">${esc(b.notes)}</td>
-            <td data-label="Status" class="nowrap">${statusPill(b.status)}</td>
-            <td data-label="Actions" class="nowrap">
-              ${
-                canComplete
-                  ? `<button class="warn" data-complete="${b.id}">Complete</button>`
-                  : `<span class="muted">—</span>`
-              }
-              ${
-                canCancel
-                  ? ` <button class="danger" data-cancel="${b.id}">Cancel</button>`
-                  : ``
-              }
-            </td>
+            <td class="nowrap">${esc(b.date)}</td>
+            <td class="nowrap">${esc(b.slot)}</td>
+            <td>${esc(b.name) || "<span class='muted'>—</span>"}</td>
+            <td class="nowrap">${phoneLink}</td>
+            <td>${esc(b.email) || "<span class='muted'>—</span>"}</td>
+            <td>${esc(b.address) || "<span class='muted'>—</span>"}</td>
+            <td>${esc(b.notes) || "<span class='muted'>—</span>"}</td>
+            <td class="nowrap">${statusTag(b.status)}</td>
+            <td class="nowrap">${actions}</td>
           `;
-
           rowsEl.appendChild(tr);
         });
 
-        rowsEl.querySelectorAll("button[data-cancel]").forEach((btn) => {
+        // attach actions
+        rowsEl.querySelectorAll("button[data-action]").forEach((btn) => {
           btn.addEventListener("click", async () => {
-            const id = Number(btn.getAttribute("data-cancel"));
-            if (!confirm("Cancel this booking?")) return;
+            const id = Number(btn.getAttribute("data-id"));
+            const action = btn.getAttribute("data-action");
+
+            if (action === "cancel") {
+              if (!confirm("Cancel this booking?")) return;
+            }
+            if (action === "complete") {
+              if (!confirm("Mark this booking as completed?")) return;
+            }
 
             btn.disabled = true;
-            btn.textContent = "Canceling...";
+            btn.textContent =
+              action === "cancel" ? "Canceling..." : "Completing...";
 
-            const r = await fetch("/admin/cancel", {
+            const url =
+              action === "cancel" ? "/admin/cancel" : "/admin/complete";
+            const res = await fetch(url, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id }),
             });
 
-            if (!r.ok) {
-              alert("Cancel failed.");
+            if (!res.ok) {
+              alert(
+                action === "cancel" ? "Cancel failed." : "Complete failed.",
+              );
               btn.disabled = false;
-              btn.textContent = "Cancel";
+              btn.textContent = action === "cancel" ? "Cancel" : "Complete";
               return;
             }
 
-            await load(dateEl.value || "");
-          });
-        });
-
-        rowsEl.querySelectorAll("button[data-complete]").forEach((btn) => {
-          btn.addEventListener("click", async () => {
-            const id = Number(btn.getAttribute("data-complete"));
-            if (!confirm("Mark this booking completed?")) return;
-
-            btn.disabled = true;
-            btn.textContent = "Saving...";
-
-            const r = await fetch("/admin/complete", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id }),
-            });
-
-            if (!r.ok) {
-              alert("Complete failed.");
-              btn.disabled = false;
-              btn.textContent = "Complete";
-              return;
-            }
-
-            await load(dateEl.value || "");
+            await renderBookings(selectedDate);
+            await updateMonthDots(); // refresh dots after action
           });
         });
       }
 
-      document
-        .getElementById("load")
-        .addEventListener("click", () => load(dateEl.value));
-      document.getElementById("loadAll").addEventListener("click", () => {
-        dateEl.value = "";
-        load("");
-      });
+      function updateDotForDay(ymd, has) {
+        const cellEl = calGrid.querySelector(`[data-ymd="${ymd}"]`);
+        if (!cellEl) return;
+        const dot = cellEl.querySelector(".dot");
+        if (!dot) return;
+        dot.classList.toggle("has", !!has);
+        dot.classList.toggle("none", !has);
+      }
 
-      load("");
+      function renderCalendar() {
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+
+        calTitle.textContent = `${monthName(month)} ${year}`;
+        calGrid.innerHTML = "";
+
+        const firstOfMonth = new Date(year, month, 1);
+        const startDow = firstOfMonth.getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // blanks
+        for (let i = 0; i < startDow; i++) {
+          const blank = document.createElement("div");
+          blank.className = "day mutedDay";
+          blank.textContent = "";
+          calGrid.appendChild(blank);
+        }
+
+        const today = startOfDay(new Date());
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const cellDate = startOfDay(new Date(year, month, day));
+          const ymd = toYMD(cellDate);
+
+          const btn = document.createElement("div");
+          btn.className = "day";
+          btn.textContent = day;
+          btn.dataset.ymd = ymd;
+
+          // disable past days
+          if (cellDate < today) {
+            btn.classList.add("mutedDay");
+            calGrid.appendChild(btn);
+            continue;
+          }
+
+          if (selectedDate === ymd) btn.classList.add("selected");
+
+          const dot = document.createElement("div");
+          dot.className = "dot none";
+          btn.appendChild(dot);
+
+          btn.onclick = async () => {
+            selectedDate = ymd;
+            renderCalendar();
+            await renderBookings(selectedDate);
+          };
+
+          calGrid.appendChild(btn);
+
+          // if we already know, set dot fast
+          if (cacheHasBookings.has(ymd)) {
+            updateDotForDay(ymd, cacheHasBookings.get(ymd));
+          }
+        }
+      }
+
+      async function updateMonthDots() {
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const today = startOfDay(new Date());
+
+        // Lightweight: check each future day once per month view.
+        for (let d = 1; d <= daysInMonth; d++) {
+          const cellDate = startOfDay(new Date(year, month, d));
+          if (cellDate < today) continue;
+
+          const ymd = toYMD(cellDate);
+          if (cacheHasBookings.has(ymd)) continue;
+
+          const data = await fetchBookingsForDate(ymd);
+          if (!Array.isArray(data)) continue;
+
+          cacheHasBookings.set(ymd, data.length > 0);
+          updateDotForDay(ymd, data.length > 0);
+        }
+      }
+
+      // ===== nav =====
+      document.getElementById("prevBtn").onclick = async () => {
+        viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1);
+        renderCalendar();
+        await updateMonthDots();
+      };
+      document.getElementById("nextBtn").onclick = async () => {
+        viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
+        renderCalendar();
+        await updateMonthDots();
+      };
+      document.getElementById("todayBtn").onclick = async () => {
+        const t = new Date();
+        viewDate = new Date(t.getFullYear(), t.getMonth(), 1);
+        selectedDate = toYMD(t);
+        renderCalendar();
+        await renderBookings(selectedDate);
+        await updateMonthDots();
+      };
+
+      // ===== boot =====
+      (async function init() {
+        selectedText.textContent = selectedDate;
+        renderCalendar();
+        await renderBookings(selectedDate);
+        await updateMonthDots();
+      })();
     </script>
   </body>
 </html>
