@@ -646,6 +646,36 @@
 
         if (res.ok) {
           const data = await res.json();
+          // Build booking body safely (guarantees phone is included)
+          const body = {
+            date: selectedDate,
+            slot: selectedSlot,
+            name: (document.getElementById("name")?.value || "").trim(),
+            phone: (document.getElementById("phone")?.value || "").trim(),
+            email: (document.getElementById("email")?.value || "").trim(),
+            address: (document.getElementById("address")?.value || "").trim(),
+            notes: (document.getElementById("notes")?.value || "").trim(),
+          };
+
+          // Save fallbacks (confirm page can read these if needed)
+          localStorage.setItem("name", body.name);
+          localStorage.setItem("phone", body.phone);
+          localStorage.setItem("booking", JSON.stringify(body));
+
+          // Save exactly what confirm.html displays
+          localStorage.setItem(
+            "last_booking",
+            JSON.stringify({
+              id: data.id || data.bookingId || "",
+              date: selectedDate,
+              slotLabel: selectedLabel || "",
+              name: body.name,
+              phone: body.phone,
+              email: body.email || "",
+              address: body.address || "",
+              notes: body.notes || "",
+            }),
+          );
 
           localStorage.setItem(
             "last_booking",
