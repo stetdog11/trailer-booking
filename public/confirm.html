@@ -49,7 +49,7 @@
         display: block;
       }
       .header .title {
-        font-weight: 800;
+        font-weight: 900;
         font-size: 18px;
         line-height: 1.2;
       }
@@ -67,7 +67,7 @@
         background: #111827;
         color: #fff;
         text-decoration: none;
-        font-weight: 700;
+        font-weight: 900;
         white-space: nowrap;
       }
       .card {
@@ -97,7 +97,7 @@
         color: var(--muted);
       }
       .value {
-        font-weight: 800;
+        font-weight: 900;
         margin-top: 4px;
         word-break: break-word;
       }
@@ -114,7 +114,7 @@
         color: var(--btnText);
         padding: 12px 14px;
         border-radius: 12px;
-        font-weight: 800;
+        font-weight: 900;
         cursor: pointer;
         text-decoration: none;
         display: inline-flex;
@@ -132,17 +132,16 @@
         font-size: 13px;
         line-height: 1.4;
       }
-      .closeNote {
-        margin-top: 6px;
-        font-size: 14px;
-        font-weight: 900;
-        color: #0f172a;
-      }
       .foot {
         text-align: center;
         color: rgba(15, 23, 42, 0.55);
         font-size: 12px;
         margin-top: 12px;
+      }
+      .bigClose {
+        margin-top: 10px;
+        font-weight: 900;
+        color: #0f172a;
       }
     </style>
   </head>
@@ -163,10 +162,12 @@
 
       <div class="card">
         <h1>✅ Booking Confirmed</h1>
+        <div class="bigClose">Done — you can close this tab/window.</div>
 
         <div class="grid" id="details"></div>
 
         <div class="actions">
+          <button class="btn secondary" id="closeBtn">Close window</button>
           <a class="btn" id="bookAnother" href="/">Book another time</a>
           <a
             class="btn secondary"
@@ -181,7 +182,6 @@
           Need to change your appointment? Please call/text us. Online bookings
           can’t be edited after submission.
         </div>
-        <div class="closeNote">✅ You can close this window now.</div>
 
         <div class="foot">© All Keys Trailer Repair</div>
       </div>
@@ -192,6 +192,7 @@
       const detailsEl = document.getElementById("details");
       const addCalBtn = document.getElementById("addCal");
       const bookAnother = document.getElementById("bookAnother");
+      const closeBtn = document.getElementById("closeBtn");
 
       function addRow(label, value) {
         const div = document.createElement("div");
@@ -249,6 +250,12 @@
           .join("\r\n");
       }
 
+      closeBtn.addEventListener("click", () => {
+        // Most mobile browsers won't allow window.close(). Still keep it.
+        window.close();
+        // fallback message is already shown above
+      });
+
       bookAnother.addEventListener("click", () => {
         localStorage.removeItem("last_booking");
         localStorage.removeItem("name");
@@ -273,16 +280,6 @@
           addRow("Status", "Booking confirmed.");
           addCalBtn.style.display = "none";
         } else {
-          if (!b.name) {
-            const bookingObj = safeParse(localStorage.getItem("booking") || "");
-            b.name =
-              (localStorage.getItem("name") || "").trim() ||
-              (bookingObj && bookingObj.name
-                ? String(bookingObj.name).trim()
-                : "") ||
-              "";
-          }
-
           addRow("Date", b.date || "—");
           addRow("Time Slot", b.slotLabel || "—");
           addRow("Name", b.name || "—");
@@ -294,7 +291,8 @@
 
           const ics = buildICS(b);
           const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-          addCalBtn.href = URL.createObjectURL(blob);
+          const url = URL.createObjectURL(blob);
+          addCalBtn.href = url;
         }
       }
     </script>

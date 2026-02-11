@@ -12,9 +12,25 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// ===== Env =====
+const ADMIN_USER = process.env.ADMIN_USER || "allkeys";
+const ADMIN_PASS = process.env.ADMIN_PASS || "seadog";
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const FROM_EMAIL = process.env.FROM_EMAIL || "";
+const OWNER_NOTIFY_EMAIL = process.env.OWNER_NOTIFY_EMAIL || "";
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || "";
+
+// ===== Basic Auth =====
+const adminAuth = basicAuth({
+  users: { [ADMIN_USER]: ADMIN_PASS },
+  challenge: true,
+});
+
 // ===== Database =====
 const db = new sqlite3.Database("./bookings.db");
 
+// status: booked | canceled | completed
 db.run(`
   CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,30 +46,39 @@ db.run(`
   )
 `);
 
-// ===== Slots =====
 const slots = {
   1: "9:00 AM - 12:00 PM",
   2: "12:00 PM - 3:00 PM",
   3: "3:00 PM - 6:00 PM",
 };
 
-// ===== Admin Auth =====
-const ADMIN_USER = process.env.ADMIN_USER || "allkeys";
-const ADMIN_PASS = process.env.ADMIN_PASS || "seadog";
+function slotLabel(slot) {
+  return slots[String(slot)] || `Slot ${slot}`;
+}
 
-const adminAuth = basicAuth({
-  users: { [ADMIN_USER]: ADMIN_PASS },
-  challenge: true,
-});
+function esc(s) {
+  return String(s || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
 
-// ===== Email (Resend) - optional =====
-const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-const FROM_EMAIL = process.env.FROM_EMAIL || "";
-const OWNER_NOTIFY_EMAIL = process.env.OWNER_NOTIFY_EMAIL || "";
-const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || "";
+function absUrl(p) {
+  const base = (PUBLIC_BASE_URL || "").trim().replace(/\/$/, "");
+  if (!base) return p;
+  return base + p;
+}
 
-async function sendEmail({ to, subject, html }) {
+// ===== Resend (email -> SMS) =====
+// NOTE: Node 18+ has fetch built in. If your runtime is older, upgrade node on Render.
+async function resendSend({ to, subject, text, html }) {
   if (!RESEND_API_KEY || !FROM_EMAIL || !to) return;
+
+  if (typeof fetch !== "function") {
+    console.log("Missing fetch(). Use Node 18+ runtime on Render.");
+    return;
+  }
+
   try {
     const resp = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -63,42 +88,126 @@ async function sendEmail({ to, subject, html }) {
       },
       body: JSON.stringify({
         from: FROM_EMAIL,
-        to,
+        to: Array.isArray(to) ? to : [to],
         subject,
-        html,
+        ...(html ? { html } : {}),
+        ...(text ? { text } : {}),
       }),
     });
+
     if (!resp.ok) {
-      const text = await resp.text().catch(() => "");
-      console.warn("Resend email failed", resp.status, text);
+      const body = await resp.text().catch(() => "");
+      console.log("Resend error:", resp.status, body);
     }
   } catch (e) {
-    console.warn("Resend email error", e.message || e);
+    console.log("Resend exception:", e.message || e);
   }
 }
 
-function esc(s) {
-  return String(s || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;");
-}
+async function notifyOwnerNewBooking(booking) {
+  if (!OWNER_NOTIFY_EMAIL) return;
 
-function slotLabel(slot) {
-  return slots[String(slot)] || `Slot ${slot}`;
+  const subject = `NEW BOOKING: ${booking.date} ${booking.slotLabel}`;
+  const text = `NEW BOOKING
+Date: ${booking.date}
+Time: ${booking.slotLabel}
+Name: ${booking.name || "-"}
+Phone: ${booking.phone || "-"}
+Email: ${booking.email || "-"}
+Address: ${booking.address || "-"}
+Notes: ${booking.notes || "-"}
+
+Admin: ${absUrl("/admin")}
+`;
+
+  await resendSend({
+    to: OWNER_NOTIFY_EMAIL,
+    subject,
+    text,
+  });
 }
 
 // ===== Debug ping =====
 app.get("/__ping", (req, res) => {
-  res.type("text").send("PING-123");
+  res.type("text").send("PING-OK");
 });
 
-// ===== ADMIN ROUTES (MUST BE BEFORE static) =====
+// ===== Admin routes (PROTECTED) =====
+// /admin should open the admin page and force auth challenge
 app.get("/admin", adminAuth, (req, res) => {
-  res.redirect("/admin.html");
+  res.type("html");
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
+// Optional: allow /admin.html too, protected
 app.get("/admin.html", adminAuth, (req, res) => {
+  res.type("html");
   res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
+// Admin API: list bookings
+// - if date provided: returns bookings for that date (any status)
+// - if no date: returns upcoming booked bookings (today+)
+app.get("/admin/bookings", adminAuth, (req, res) => {
+  const { date } = req.query;
+
+  if (date) {
+    db.all(
+      "SELECT * FROM bookings WHERE date = ? ORDER BY date, slot",
+      [date],
+      (err, rows) => {
+        if (err) return res.status(500).json({ error: "DB error" });
+        res.json(rows);
+      },
+    );
+    return;
+  }
+
+  // Upcoming booked (today and forward)
+  const today = new Date();
+  const ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(today.getDate()).padStart(2, "0")}`;
+
+  db.all(
+    "SELECT * FROM bookings WHERE date >= ? AND status = 'booked' ORDER BY date, slot",
+    [ymd],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      res.json(rows);
+    },
+  );
+});
+
+// Admin API: cancel booking
+app.post("/admin/cancel", adminAuth, (req, res) => {
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ error: "Missing id" });
+
+  db.run(
+    "UPDATE bookings SET status = 'canceled' WHERE id = ?",
+    [id],
+    function (err) {
+      if (err) return res.status(500).json({ error: "DB error" });
+      res.json({ success: true });
+    },
+  );
+});
+
+// Admin API: complete booking
+app.post("/admin/complete", adminAuth, (req, res) => {
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ error: "Missing id" });
+
+  db.run(
+    "UPDATE bookings SET status = 'completed' WHERE id = ?",
+    [id],
+    function (err) {
+      if (err) return res.status(500).json({ error: "DB error" });
+      res.json({ success: true });
+    },
+  );
 });
 
 // ===== Availability =====
@@ -112,7 +221,7 @@ app.get("/availability", (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: "DB error" });
 
-      const booked = rows.map((r) => r.slot);
+      const booked = rows.map((r) => Number(r.slot));
       const availability = Object.keys(slots).map((s) => ({
         slot: Number(s),
         label: slots[s],
@@ -126,7 +235,9 @@ app.get("/availability", (req, res) => {
 
 // ===== Book Slot =====
 app.post("/book", (req, res) => {
-  const { date, slot, name, phone, email, address, notes } = req.body;
+  const { date, slot, name, phone, email, address, notes } = req.body || {};
+  if (!date || !slot)
+    return res.status(400).json({ error: "Missing date/slot" });
 
   db.run(
     `
@@ -134,180 +245,31 @@ app.post("/book", (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
     [date, slot, name, phone, email, address, notes],
-    async function (err) {
+    function (err) {
       if (err) return res.status(400).json({ error: "Slot already booked" });
 
       const bookingId = this.lastID;
 
-      // Email owner
-      if (OWNER_NOTIFY_EMAIL) {
-        const ownerHtml = `
-          <h3>New Booking</h3>
-          <p><b>ID:</b> ${esc(bookingId)}</p>
-          <p><b>Date:</b> ${esc(date)}</p>
-          <p><b>Slot:</b> ${esc(slotLabel(slot))}</p>
-          <p><b>Name:</b> ${esc(name)}</p>
-          <p><b>Phone:</b> ${esc(phone)}</p>
-          <p><b>Address:</b> ${esc(address)}</p>
-          <p><b>Notes:</b> ${esc(notes)}</p>
-          <p><a href="${esc(PUBLIC_BASE_URL)}/admin">Open Admin</a></p>
-        `;
-        await sendEmail({
-          to: OWNER_NOTIFY_EMAIL,
-          subject: `New Booking: ${date} • ${slotLabel(slot)} • ${name || "No Name"}`,
-          html: ownerHtml,
-        });
-      }
-
-      // Customer email (if provided)
-      if (email) {
-        const custHtml = `
-          <h3>Booking Confirmed</h3>
-          <p><b>Date:</b> ${esc(date)}</p>
-          <p><b>Slot:</b> ${esc(slotLabel(slot))}</p>
-          <p>If you need to change this booking, call/text us.</p>
-        `;
-        await sendEmail({
-          to: email,
-          subject: "Your trailer repair booking is confirmed",
-          html: custHtml,
-        });
-      }
-
+      // Respond immediately (fast UX)
       res.json({ success: true, id: bookingId });
+
+      // Fire-and-forget owner notify (email->sms)
+      notifyOwnerNewBooking({
+        id: bookingId,
+        date,
+        slot,
+        slotLabel: slotLabel(slot),
+        name,
+        phone,
+        email,
+        address,
+        notes,
+      }).catch(() => {});
     },
   );
 });
 
-// ===== Admin APIs (ROUTE-LEVEL PROTECTED) =====
-app.get("/admin/bookings", adminAuth, (req, res) => {
-  const { date } = req.query;
-
-  const sql = date
-    ? "SELECT * FROM bookings WHERE date = ? ORDER BY date, slot"
-    : "SELECT * FROM bookings ORDER BY date, slot";
-
-  const params = date ? [date] : [];
-
-  db.all(sql, params, (err, rows) => {
-    if (err) return res.status(500).json({ error: "DB error" });
-    res.json(rows);
-  });
-});
-
-app.post("/admin/cancel", adminAuth, (req, res) => {
-  const { id } = req.body;
-  if (!id) return res.status(400).json({ error: "Missing id" });
-  app.post("/admin/complete", adminAuth, (req, res) => {
-    const { id } = req.body;
-
-    db.run(
-      "UPDATE bookings SET status = 'completed' WHERE id = ?",
-      [id],
-      (err) => {
-        if (err) return res.status(500).json(err);
-        res.json({ success: true });
-      },
-    );
-  });
-
-  db.get("SELECT * FROM bookings WHERE id = ?", [id], async (err, row) => {
-    if (err) return res.status(500).json({ error: "DB error" });
-    if (!row) return res.status(404).json({ error: "Not found" });
-
-    db.run(
-      "UPDATE bookings SET status = 'canceled' WHERE id = ?",
-      [id],
-      async (uErr) => {
-        if (uErr) return res.status(500).json({ error: "DB error" });
-
-        // emails
-        if (OWNER_NOTIFY_EMAIL) {
-          const ownerHtml = `
-          <h3>Booking Canceled</h3>
-          <p><b>ID:</b> ${esc(row.id)}</p>
-          <p><b>Date:</b> ${esc(row.date)}</p>
-          <p><b>Slot:</b> ${esc(slotLabel(row.slot))}</p>
-          <p><b>Name:</b> ${esc(row.name)}</p>
-        `;
-          await sendEmail({
-            to: OWNER_NOTIFY_EMAIL,
-            subject: `Canceled: ${row.date} • ${slotLabel(row.slot)} • ${row.name || "No Name"}`,
-            html: ownerHtml,
-          });
-        }
-
-        if (row.email) {
-          const custHtml = `
-          <h3>Your booking was canceled</h3>
-          <p><b>Date:</b> ${esc(row.date)}</p>
-          <p><b>Slot:</b> ${esc(slotLabel(row.slot))}</p>
-        `;
-          await sendEmail({
-            to: row.email,
-            subject: "Your booking was canceled",
-            html: custHtml,
-          });
-        }
-
-        res.json({ success: true });
-      },
-    );
-  });
-});
-
-// ===== Admin: Complete booking =====
-app.post("/admin/complete", adminAuth, (req, res) => {
-  const { id } = req.body;
-  if (!id) return res.status(400).json({ error: "Missing id" });
-
-  db.get("SELECT * FROM bookings WHERE id = ?", [id], async (err, row) => {
-    if (err) return res.status(500).json({ error: "DB error" });
-    if (!row) return res.status(404).json({ error: "Not found" });
-
-    db.run(
-      "UPDATE bookings SET status = 'completed' WHERE id = ?",
-      [id],
-      async (uErr) => {
-        if (uErr) return res.status(500).json({ error: "DB error" });
-
-        // owner email
-        if (OWNER_NOTIFY_EMAIL) {
-          const ownerHtml = `
-          <h3>Booking Completed</h3>
-          <p><b>ID:</b> ${esc(row.id)}</p>
-          <p><b>Date:</b> ${esc(row.date)}</p>
-          <p><b>Slot:</b> ${esc(slotLabel(row.slot))}</p>
-          <p><b>Name:</b> ${esc(row.name)}</p>
-        `;
-          await sendEmail({
-            to: OWNER_NOTIFY_EMAIL,
-            subject: `Completed: ${row.date} • ${slotLabel(row.slot)} • ${row.name || "No Name"}`,
-            html: ownerHtml,
-          });
-        }
-
-        // optionally email customer that job marked complete
-        if (row.email) {
-          const custHtml = `
-          <h3>Your booking was completed</h3>
-          <p><b>Date:</b> ${esc(row.date)}</p>
-          <p><b>Slot:</b> ${esc(slotLabel(row.slot))}</p>
-        `;
-          await sendEmail({
-            to: row.email,
-            subject: "Your booking was completed",
-            html: custHtml,
-          });
-        }
-
-        res.json({ success: true });
-      },
-    );
-  });
-});
-
-// ===== Static Files (ABSOLUTELY LAST) =====
+// ===== Static files (LAST) =====
 app.use(express.static("public"));
 
 // ===== Start =====

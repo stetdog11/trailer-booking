@@ -16,7 +16,7 @@
           sans-serif;
         background: #0b1220;
         color: #e5e7eb;
-        padding: 18px;
+        padding: 14px;
       }
       .wrap {
         max-width: 1100px;
@@ -32,7 +32,7 @@
       }
       h1 {
         margin: 0 0 10px;
-        font-size: 20px;
+        font-size: 18px;
       }
       .row {
         display: flex;
@@ -53,7 +53,7 @@
         border: 0;
         background: #22c55e;
         color: #052e16;
-        font-weight: 800;
+        font-weight: 900;
         cursor: pointer;
       }
       button.secondary {
@@ -64,9 +64,21 @@
         background: #ef4444;
         color: #450a0a;
       }
+      button.warn {
+        background: #f59e0b;
+        color: #3b2100;
+      }
       button:disabled {
-        opacity: 0.65;
+        opacity: 0.6;
         cursor: not-allowed;
+      }
+
+      .muted {
+        color: #9ca3af;
+        font-size: 13px;
+      }
+      .nowrap {
+        white-space: nowrap;
       }
 
       table {
@@ -91,33 +103,54 @@
         display: inline-block;
         padding: 4px 10px;
         border-radius: 999px;
-        font-weight: 800;
+        font-weight: 900;
         font-size: 12px;
       }
-      .booked {
+      .p-booked {
         background: #1f2937;
         color: #e5e7eb;
       }
-      .canceled {
+      .p-canceled {
         background: #7f1d1d;
         color: #fee2e2;
       }
-      .completed {
-        background: #14532d;
-        color: #dcfce7;
+      .p-completed {
+        background: #064e3b;
+        color: #d1fae5;
       }
 
-      .muted {
-        color: #9ca3af;
-      }
-      .nowrap {
-        white-space: nowrap;
-      }
-      .actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
+      @media (max-width: 820px) {
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+          display: block;
+        }
+        thead {
+          display: none;
+        }
+        tr {
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 14px;
+          margin-bottom: 10px;
+          padding: 10px;
+          background: #0f172a;
+        }
+        td {
+          border: 0;
+          padding: 6px 0;
+        }
+        td::before {
+          content: attr(data-label);
+          display: block;
+          color: #93c5fd;
+          font-size: 12px;
+          font-weight: 900;
+          margin-bottom: 2px;
+          letter-spacing: 0.02em;
+        }
       }
     </style>
   </head>
@@ -126,10 +159,10 @@
       <div class="card">
         <h1>Admin — Bookings</h1>
         <div class="row">
-          <label class="muted">Filter by date (optional):</label>
+          <span class="muted">Filter by date (optional):</span>
           <input id="date" type="date" />
           <button id="load">Load</button>
-          <button class="secondary" id="loadUpcoming">Load upcoming</button>
+          <button class="secondary" id="loadAll">Load upcoming</button>
           <span class="muted" id="status"></span>
         </div>
       </div>
@@ -146,7 +179,7 @@
               <th>Address</th>
               <th>Notes</th>
               <th class="nowrap">Status</th>
-              <th class="nowrap">Action</th>
+              <th class="nowrap">Actions</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -160,153 +193,134 @@
       const dateEl = document.getElementById("date");
 
       function esc(s) {
-        return String(s ?? "")
+        return String(s || "")
           .replaceAll("&", "&amp;")
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;");
       }
 
-      function ymdToday() {
-        const d = new Date();
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        return `${yyyy}-${mm}-${dd}`;
-      }
-
       function statusPill(status) {
         if (status === "canceled")
-          return `<span class="pill canceled">canceled</span>`;
+          return `<span class="pill p-canceled">canceled</span>`;
         if (status === "completed")
-          return `<span class="pill completed">completed</span>`;
-        return `<span class="pill booked">booked</span>`;
+          return `<span class="pill p-completed">completed</span>`;
+        return `<span class="pill p-booked">booked</span>`;
       }
 
-      async function apiPost(url, body) {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        return res;
-      }
-
-      async function load({ date = "", upcoming = false } = {}) {
+      async function load(date) {
         statusEl.textContent = "Loading...";
         rowsEl.innerHTML = "";
 
-        let url = "/admin/bookings";
-        if (date) {
-          url = `/admin/bookings?date=${encodeURIComponent(date)}`;
-        } else if (upcoming) {
-          // If your server already filters upcoming, it will just work.
-          // If not, we still filter client-side below.
-          url = "/admin/bookings";
-        }
+        const url = date
+          ? `/admin/bookings?date=${encodeURIComponent(date)}`
+          : `/admin/bookings`;
 
         const res = await fetch(url);
-        const data = await res.json();
+        if (!res.ok) {
+          statusEl.textContent = "Error loading bookings.";
+          return;
+        }
 
+        const data = await res.json();
         if (!Array.isArray(data)) {
           statusEl.textContent = "Error loading bookings.";
           return;
         }
 
-        // Client-side "upcoming" filter (safe even if server doesn't do it)
-        let rows = data;
-        if (upcoming && !date) {
-          const today = ymdToday();
-          rows = rows
-            .filter((b) => (b.status || "booked") === "booked")
-            .filter((b) => String(b.date || "") >= today);
-        }
+        statusEl.textContent = `${data.length} booking(s)`;
 
-        statusEl.textContent = `${rows.length} booking(s)`;
-
-        rows.forEach((b) => {
+        data.forEach((b) => {
           const tr = document.createElement("tr");
-          const st = (b.status || "booked").toLowerCase();
 
-          let actionHtml = `<span class="muted">—</span>`;
-          if (st === "booked") {
-            actionHtml = `
-              <div class="actions">
-                <button class="completeBtn" data-id="${b.id}">Complete</button>
-                <button class="danger cancelBtn" data-id="${b.id}">Cancel</button>
-              </div>
-            `;
-          }
+          const canCancel = b.status === "booked";
+          const canComplete = b.status === "booked";
 
           tr.innerHTML = `
-            <td class="nowrap">${esc(b.date)}</td>
-            <td class="nowrap">${esc(b.slot)}</td>
-            <td>${esc(b.name)}</td>
-            <td class="nowrap">${esc(b.phone)}</td>
-            <td>${esc(b.email)}</td>
-            <td>${esc(b.address)}</td>
-            <td>${esc(b.notes)}</td>
-            <td class="nowrap">${statusPill(st)}</td>
-            <td class="nowrap">${actionHtml}</td>
+            <td data-label="Date" class="nowrap">${esc(b.date)}</td>
+            <td data-label="Slot" class="nowrap">${esc(b.slot)}</td>
+            <td data-label="Name">${esc(b.name)}</td>
+            <td data-label="Phone" class="nowrap">${esc(b.phone)}</td>
+            <td data-label="Email">${esc(b.email)}</td>
+            <td data-label="Address">${esc(b.address)}</td>
+            <td data-label="Notes">${esc(b.notes)}</td>
+            <td data-label="Status" class="nowrap">${statusPill(b.status)}</td>
+            <td data-label="Actions" class="nowrap">
+              ${
+                canComplete
+                  ? `<button class="warn" data-complete="${b.id}">Complete</button>`
+                  : `<span class="muted">—</span>`
+              }
+              ${
+                canCancel
+                  ? ` <button class="danger" data-cancel="${b.id}">Cancel</button>`
+                  : ``
+              }
+            </td>
           `;
+
           rowsEl.appendChild(tr);
         });
 
-        // Wire up Complete
-        rowsEl.querySelectorAll("button.completeBtn").forEach((btn) => {
+        rowsEl.querySelectorAll("button[data-cancel]").forEach((btn) => {
           btn.addEventListener("click", async () => {
-            const id = Number(btn.getAttribute("data-id"));
-            if (!confirm("Mark this booking as COMPLETED?")) return;
-
-            btn.disabled = true;
-            btn.textContent = "Saving...";
-
-            const res = await apiPost("/admin/complete", { id });
-            if (!res.ok) {
-              alert("Complete failed.");
-              btn.disabled = false;
-              btn.textContent = "Complete";
-              return;
-            }
-
-            await load({ date: dateEl.value || "", upcoming: !dateEl.value });
-          });
-        });
-
-        // Wire up Cancel
-        rowsEl.querySelectorAll("button.cancelBtn").forEach((btn) => {
-          btn.addEventListener("click", async () => {
-            const id = Number(btn.getAttribute("data-id"));
+            const id = Number(btn.getAttribute("data-cancel"));
             if (!confirm("Cancel this booking?")) return;
 
             btn.disabled = true;
             btn.textContent = "Canceling...";
 
-            const res = await apiPost("/admin/cancel", { id });
-            if (!res.ok) {
+            const r = await fetch("/admin/cancel", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id }),
+            });
+
+            if (!r.ok) {
               alert("Cancel failed.");
               btn.disabled = false;
               btn.textContent = "Cancel";
               return;
             }
 
-            await load({ date: dateEl.value || "", upcoming: !dateEl.value });
+            await load(dateEl.value || "");
+          });
+        });
+
+        rowsEl.querySelectorAll("button[data-complete]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = Number(btn.getAttribute("data-complete"));
+            if (!confirm("Mark this booking completed?")) return;
+
+            btn.disabled = true;
+            btn.textContent = "Saving...";
+
+            const r = await fetch("/admin/complete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id }),
+            });
+
+            if (!r.ok) {
+              alert("Complete failed.");
+              btn.disabled = false;
+              btn.textContent = "Complete";
+              return;
+            }
+
+            await load(dateEl.value || "");
           });
         });
       }
 
       document
         .getElementById("load")
-        .addEventListener("click", () =>
-          load({ date: dateEl.value || "", upcoming: false }),
-        );
-
-      document.getElementById("loadUpcoming").addEventListener("click", () => {
+        .addEventListener("click", () => load(dateEl.value));
+      document.getElementById("loadAll").addEventListener("click", () => {
         dateEl.value = "";
-        load({ date: "", upcoming: true });
+        load("");
       });
 
-      // default: upcoming
-      load({ upcoming: true });
+      load("");
     </script>
   </body>
 </html>
